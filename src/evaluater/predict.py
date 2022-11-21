@@ -30,13 +30,8 @@ def predict(model, data_generator):
     return model.predict_generator(data_generator, workers=8, use_multiprocessing=True, verbose=1)
 
 
-def main(base_model_name, weights_file, image_source, predictions_file, img_format='jpg'):
-    # load samples
-    if os.path.isfile(image_source):
-        image_dir, samples = image_file_to_json(image_source)
-    else:
-        image_dir = image_source
-        samples = image_dir_to_json(image_dir, img_type='jpg')
+def main(base_model_name, weights_file, image_list, predictions_file, img_format='jpg'):
+    samples = [{'image_id': img_path} for img_path in image_list.split(":")]
 
     # build model and load weights
     nima = Nima(base_model_name, weights=None)
@@ -44,8 +39,7 @@ def main(base_model_name, weights_file, image_source, predictions_file, img_form
     nima.nima_model.load_weights(weights_file)
 
     # initialize data generator
-    data_generator = TestDataGenerator(samples, image_dir, 64, 10, nima.preprocessing_function(),
-                                       img_format=img_format)
+    data_generator = TestDataGenerator(samples, 64, 10, nima.preprocessing_function())
 
     # get predictions
     predictions = predict(nima.nima_model, data_generator)
@@ -65,7 +59,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-b', '--base-model-name', help='CNN base model name', required=True)
     parser.add_argument('-w', '--weights-file', help='path of weights file', required=True)
-    parser.add_argument('-is', '--image-source', help='image directory or file', required=True)
+    parser.add_argument('-is', '--image-list', help='list of images seperated by colon', required=True)
     parser.add_argument('-pf', '--predictions-file', help='file with predictions', required=False, default=None)
 
     args = parser.parse_args()
